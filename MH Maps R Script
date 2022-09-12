@@ -1,0 +1,292 @@
+# Mental Health Maps for Georgia and South Caroline
+# 
+# Maps include:
+#   Number of Mental Health Providers by county - log10 transformed data
+#   Ratio of Citizens to Mental Health Providers by county - categorical data 
+# 
+# Individual and combined maps are created for each of the above
+# 
+# Data retrieved from: https://www.countyhealthrankings.org/
+# GA: https://www.countyhealthrankings.org/sites/default/files/media/document/2022%20County%20Health%20Rankings%20Georgia%20Data%20-%20v1.xlsx
+# SC: https://www.countyhealthrankings.org/sites/default/files/media/document/2022%20County%20Health%20Rankings%20South%20Carolina%20Data%20-%20v1.xlsx
+# 
+# Aubrey R.D. Kehoe, DrPH Candidate 9/11/2022
+# 
+# Ref1: ggplot2: Elegant Graphics for Data Analysis, by Hadley Wickham
+# Ref2: Package 'maps'    https://cran.r-project.org/web/packages/maps/maps.pdf
+# Ref3: Package 'usmap'   https://cran.r-project.org/web/packages/usmap/usmap.pdf
+# Ref4: Package 'mapproj' https://cran.r-project.org/web/packages/mapproj/index.html
+# Ref5: Package 'dplyr'   https://cran.r-project.org/web/packages/dplyr/vignettes/dplyr.html
+# Ref6: Geocomputation with R by Jean-Marc Viglino and is licensed under CC-BY 4.0 International https://geocompr.robinlovelace.net/index.html
+
+
+-----------------------------------------------------------------------------------------------------------
+
+  
+library(readxl)
+
+GArank=read_excel('Georgia 2022.xlsx', 'Ranked')
+GAadtl=read_excel('Georgia 2022.xlsx', 'Additional')
+
+SCrank=read_excel('SCarolina 2022.xlsx', 'Ranked')
+SCadtl=read_excel('SCarolina 2022.xlsx', 'Additional')
+
+# Variables to be used:
+#   Ranked  - Avg_Mentally_Unhealthy_D AMUD_CIL AMUD_CIH AMUD_Z
+#           - MHP MPH_rate MHP_ratio	MHP_Z
+#           - No_Associations Social_Association_Rate SAR_Z
+#           - FIPS State group County
+
+#   Additional
+#           - Freq_Mental_Distress_prop FMDP_CIL FMDP_CIH
+#           - Suicides Age_Adjusted_Suicide_Rate AASR_CIL AASR_CIH Crude_Suicide_Rate CSR_AIAN	
+#             CSR_AIAN_CIL CSR_AIAN_CIH CSR_Asian CSR_Asian_CIL CSR_Asian_CIH CSR_Black CSR_Black_CIL	
+#             CSR_Black_CIH CSR_Hisp CSR_Hisp_CIL CSR_Hisp_CIH CSR_White CSR_White_CIL CSR_White_CIH
+#           - group
+
+# Restrict data set to above variables only:
+GArank= subset(GArank, select = c (FIPS, State, group, subregion, Avg_Mentally_Unhealthy_D, AMUD_CIL, 
+                                   AMUD_CIH, AMUD_Z, MHP, MPH_rate, MHP_ratio, MHP_Z, No_Associations, 
+                                   Social_Association_Rate, SAR_Z))
+
+GArank1 <- GArank
+GArank1$MHP_ratio <- substring(GArank1$MHP_ratio,1, nchar(GArank1$MHP_ratio)-2)
+GArank1$MHP_ratio <- as.numeric(GArank1$MHP_ratio)
+GArank1$MHratio <- cut(GArank1$MHP_ratio,
+                       breaks=c(0, 2000, 4000, 6000, 8000, 10000, 12000, 14000, 16000),
+                       labels=c("1-2000","2001-4000","40001-6000","6001-8000","8001-10000","10001-12000","12001-14000","14001-16000"))
+GArank1$MHratio <- as.character(GArank1$MHratio)
+ 
+GAadtl= subset(GAadtl, select = c (group, Freq_Mental_Distress_prop, FMDP_CIL, FMDP_CIH, Suicides,
+                                   Age_Adjusted_Suicide_Rate, AASR_CIL, AASR_CIH, Crude_Suicide_Rate, 
+                                   CSR_AIAN, CSR_AIAN_CIL, CSR_AIAN_CIH, CSR_Asian, CSR_Asian_CIL, 
+                                   CSR_Asian_CIH, CSR_Black, CSR_Black_CIL,	CSR_Black_CIH, CSR_Hisp, 
+                                   CSR_Hisp_CIL, CSR_Hisp_CIH, CSR_White, CSR_White_CIL, CSR_White_CIH))
+
+
+SCrank= subset(SCrank, select = c (FIPS, State, group, subregion, Avg_Mentally_Unhealthy_D, AMUD_CIL, 
+                                   AMUD_CIH, AMUD_Z, MHP, MPH_rate, MHP_ratio, MHP_Z, No_Associations, 
+                                   Social_Association_Rate, SAR_Z))
+
+SCrank1 <- SCrank
+SCrank1$MHP_ratio <- substring(SCrank1$MHP_ratio,1, nchar(SCrank1$MHP_ratio)-2)
+SCrank1$MHP_ratio <- as.numeric(SCrank1$MHP_ratio)
+SCrank1$MHratio <- cut(SCrank1$MHP_ratio,
+                       breaks=c(0, 2000, 4000, 6000, 8000, 10000, 12000, 14000, 16000),
+                       labels=c("1-2000","2001-4000","40001-6000","6001-8000","8001-10000","10001-12000","12001-14000","14001-16000"))
+SCrank1$MHratio <- as.character(SCrank1$MHratio)
+
+SCadtl= subset(SCadtl, select = c (group, Freq_Mental_Distress_prop, FMDP_CIL, FMDP_CIH, Suicides,
+                                   Age_Adjusted_Suicide_Rate, AASR_CIL, AASR_CIH, Crude_Suicide_Rate, 
+                                   CSR_AIAN, CSR_AIAN_CIL, CSR_AIAN_CIH, CSR_Asian, CSR_Asian_CIL, 
+                                   CSR_Asian_CIH, CSR_Black, CSR_Black_CIL,	CSR_Black_CIH, CSR_Hisp, 
+                                   CSR_Hisp_CIL, CSR_Hisp_CIH, CSR_White, CSR_White_CIL, CSR_White_CIH))
+
+# Merge state data sets
+GA <- merge(GAadtl, GArank1, by=c("group"))
+
+SC <- merge(SCadtl, SCrank1, by=c("group"))
+
+
+# Georgia Maps Creation:
+# required packages:
+library(maps) #Draw geographical maps
+library(mapproj) #provide projects for maps i.e. function cord_map()
+library(ggplot2)
+library(dplyr)
+library(usmap)
+
+##########  Number of Mental Health Providers  ##########
+# Vector boundaries - change the code here to a different location, state and county only for US
+ga_counties <- map_data("county", "georgia") 
+
+sc_counties <- map_data("county", "south carolina")
+
+
+# Merge two datasets into one
+ga_map <- merge(ga_counties, GA, by=c("group"))
+
+sc_map <- merge(sc_counties, SC, by=c("group"))
+
+
+# Plot the merged data for Number of Mental Health Providers 
+ga_mhp <- ggplot(ga_map, aes(x=long, y=lat, group=group, fill=log10(MHP)))+
+          labs(title = "Georgia Mental Health Providers 2021")+
+          labs(caption = "log10 Scale values are interperted: 1 = 10s, 2 = 100s, 3 = 1,000s, and 4 = 10,000s")+
+          xlab("Longitude")+
+          ylab("Latitude")+
+          geom_polygon(aes(group=group),ga_map,color="black")+
+          scale_fill_continuous(low="red", high="green", guide="colorbar", na.value="gray90", limits=c(0, 4))+
+          labs(fill = "log10 Scale")+
+          coord_quickmap()+
+          theme_bw()
+plot(ga_mhp)
+
+sc_mhp <- ggplot(sc_map, aes(x=long, y=lat, group=group, fill=log10(MHP)))+
+          labs(title = "South Carolina Mental Health Providers 2021")+
+          labs(caption = "log10 Scale values are interperted: 1 = 10s, 2 = 100s, 3 = 1,000s, and 4 = 10,000s")+
+          xlab("Longitude")+
+          ylab("Latitude")+
+          geom_polygon(aes(group=group),sc_map,color="black")+
+          scale_fill_continuous(low="red", high="green", guide="colorbar", na.value="gray90", limits=c(0, 4))+
+          labs(fill = "log10 Scale")+
+          coord_quickmap()+
+          theme_bw()
+plot(sc_mhp)
+
+# Export Maps
+prefix<-"GA MH Maps"
+tiffname<-paste0(prefix, ".tif")
+tiff(tiffname,height=8, width=8, units='in', res=300)
+gridExtra::grid.arrange(ga_mhp, ncol=1, nrow=1)
+dev.off()
+
+prefix<-"SC MH Maps"
+tiffname<-paste0(prefix, ".tif")
+tiff(tiffname,height=8, width=8, units='in', res=300)
+gridExtra::grid.arrange(sc_mhp, ncol=1, nrow=1)
+dev.off()
+
+
+# Combo Mental Health Provider Maps
+# Combining State Data 
+SC1 <-SC
+SC1$group <- SC1$group+159
+combo <- rbind(GA, SC1)
+
+
+# Creating us_map County and State Datasets
+states_of_interest <- c("GA","SC")
+
+counties <- us_map(regions = "counties", include = states_of_interest)
+counties$FIPS <- counties$fips
+states <- us_map(include = states_of_interest)
+
+
+# Merging Combined State Data and us_map Counties
+combo_map1 <- merge(combo, counties, by=c("FIPS"))
+
+
+# Plot the merged data for Number of Mental Health Providers in Combined States
+combo_mhp <- ggplot() +
+  geom_polygon(data = combo_map1, aes(x = x, y = y, group = FIPS, fill = log10(MHP)), color = "black") +
+  geom_polygon(data = states, aes(x = x, y = y, group = group), fill = NA, color = "black", size=2) +
+  labs(title = "GA & SC Mental Health Providers 2021")+
+  scale_fill_continuous(low="red", high="green", guide="colorbar", na.value="gray90", limits=c(0, 4))+
+  labs(fill = "log10 Scale")+
+  labs(caption = "log10 Scale values are interperted: 1 = 10s, 2 = 100s, 3 = 1,000s, and 4 = 10,000s")+
+  xlab("")+
+  ylab("")+
+  scale_x_discrete(labels = NULL, breaks = NULL) + labs(x = "")+
+  scale_y_discrete(labels = NULL, breaks = NULL) + labs(x = "")+
+  coord_equal()+
+  theme_bw()
+plot(combo_mhp)
+
+
+# Export Map
+prefix<-"MH Maps"
+tiffname<-paste0(prefix, ".tif")
+tiff(tiffname,height=8, width=8, units='in', res=300)
+gridExtra::grid.arrange(combo_mhp, ncol=1, nrow=1)
+dev.off()
+
+
+
+
+##########  Ratio of Mental Health Providers  ##########
+# Plot the merged data for Ratio of Mental Health Providers 
+ga_mhpr <- ggplot(ga_map, aes(x=long, y=lat, group=group, fill=MHratio))+
+  labs(title = "Georgia Patient to Mental Health Provider Ratio 2021")+
+  xlab("Longitude")+
+  ylab("Latitude")+
+  geom_polygon(aes(group=group),ga_map,color="black")+
+  scale_colour_brewer(type = "seq",
+                         palette = 15,
+                         direction = -1,
+                         na.value = "gray50",
+                         guide = "legend",
+                         aesthetics = "fill")+
+  labs(fill = "Patients per Provider")+
+  coord_quickmap()+
+  theme_bw()
+plot(ga_mhp)
+
+sc_mhpr <- ggplot(sc_map, aes(x=long, y=lat, group=group, fill=MHratio))+
+  labs(title = "South Carolina Patient to Mental Health Provider Ratio 2021")+
+  xlab("Longitude")+
+  ylab("Latitude")+
+  geom_polygon(aes(group=group),sc_map,color="black")+
+  scale_colour_brewer(type = "seq",
+                      palette = 15,
+                      direction = -1,
+                      na.value = "gray50",
+                      guide = "legend",
+                      aesthetics = "fill")+
+  labs(fill = "Patients per Provider")+
+  coord_quickmap()+
+  theme_bw()
+plot(sc_mhp)
+
+# Export Maps
+prefix<-"GA MH Ratio Maps"
+tiffname<-paste0(prefix, ".tif")
+tiff(tiffname,height=8, width=8, units='in', res=300)
+gridExtra::grid.arrange(ga_mhpr, ncol=1, nrow=1)
+dev.off()
+
+prefix<-"SC MH Ratio Maps"
+tiffname<-paste0(prefix, ".tif")
+tiff(tiffname,height=8, width=8, units='in', res=300)
+gridExtra::grid.arrange(sc_mhpr, ncol=1, nrow=1)
+dev.off()
+
+
+# Combo Mental Health Provider Maps
+# Combining State Data 
+SC1 <-SC
+SC1$group <- SC1$group+159
+combo <- rbind(GA, SC1)
+
+
+# Creating us_map County and State Datasets
+states_of_interest <- c("GA","SC")
+
+counties <- us_map(regions = "counties", include = states_of_interest)
+counties$FIPS <- counties$fips
+states <- us_map(include = states_of_interest)
+
+
+# Merging Combined State Data and us_map Counties
+combo_map1 <- merge(combo, counties, by=c("FIPS"))
+
+
+# ?scale_colour_brewer
+# Help page has the color options
+# Plot the merged data for Number of Mental Health Providers in Combined States
+combo_mhpr <- ggplot() +
+  geom_polygon(data = combo_map1, aes(x = x, y = y, group = FIPS, fill = MHratio), color = "black") +
+  geom_polygon(data = states, aes(x = x, y = y, group = group), fill = NA, color = "black", size=2) +
+  labs(title = "GA & SC Patient to Mental Health Provider Ratio 2021")+
+  scale_colour_brewer(type = "seq",
+                      palette = 15,
+                      direction = -1,
+                      na.value = "gray50",
+                      guide = "legend",
+                      aesthetics = "fill")+
+  labs(fill = "Patients per Provider")+
+  xlab("")+
+  ylab("")+
+  scale_x_discrete(labels = NULL, breaks = NULL) + labs(x = "")+
+  scale_y_discrete(labels = NULL, breaks = NULL) + labs(x = "")+
+  coord_equal()+
+  theme_bw()
+plot(combo_mhpr)
+
+
+# Export Map
+prefix<-"MH Ratio Maps"
+tiffname<-paste0(prefix, ".tif")
+tiff(tiffname,height=8, width=8, units='in', res=300)
+gridExtra::grid.arrange(combo_mhpr, ncol=1, nrow=1)
+dev.off()
