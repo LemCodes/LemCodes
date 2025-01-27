@@ -1,6 +1,5 @@
 - 👋 Hi, I’m @LemCodes
 - 👀 I’m interested in epidemiology research and new coding procedures in R and SAS
-- 🌱 I’m currently learning creation of maps in R
 - 💞️ I’m looking to collaborate
 - 📫 How to reach me https://www.linkedin.com/in/aubreyrdkehoe/
 
